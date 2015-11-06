@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<title>SK</title>
+	<style>
+	body {
+         background: #eeeeee;
+         font-family: tahoma, verdana, sans serif;
+      }
+
+      canvas {
+        margin-left:10px;
+        margin-top:10px;
+        box-shadow: 4px 4px 8px rgba(0,0,0,0.5);
+        background: white;
+    }
+      
+      #controls{
+      	margin-left:10px;
+        margin-top:10px;
+      }
+	</style>
+	<script>
+	// An IIFE ("Iffy") - see the notes in mycourses
+	(function(){
+		"use strict";
+		
+		
+		/*images
+		//sunglasses
+		images.clipartpanda.com/aviator-sunglasses-png-sunglasses-pvc.png
+		
+		//hat
+		https://upload.wikimedia.org/wikipedia/en/1/1f/Magic_Wizard's_Hat(icon).png
+		
+		//pokeball
+		2.bp.blogspot.com/-nnriC7RO7dM/VOuR_46Eb_I/AAAAAAAAAVs/u5J-XJN79SY/s1600/Pokeball.png
+		
+		//pikachu
+		http://images2.wikia.nocookie.net/__cb20130313231411/scratchpad/images/3/32/Pikachu2.png
+		
+		//charmander
+		http://vignette3.wikia.nocookie.net/es.pokemon/images/a/a4/Charmander_(anime_AG).png/revision/latest?cb=20120906023057
+		
+		*/
+		
+		var NUM_SAMPLES = 256;
+		var SOUND_1 = 'media/Pokemon Theme.m4a';
+		var SOUND_2 = 'media/Peanuts Theme.mp3';
+		var SOUND_3 = 'media/The Picard Song.mp3';
+		var audioElement;
+		var analyserNode;
+		var canvas,ctx;
+		var maxRadius = 5;
+		var currentPoke = 'pikachu';
+		var pika = new Image();
+		pika.src = 'pictures/pikachu.PNG';
+		var charm = new Image();
+		charm.src = 'pictures/charmander.PNG';
+	
+		
+		//charHat
+		var charHat = new Image();
+		charHat.src = 'pictures/charHat.PNG';
+		
+		//charBall
+		var charBall = new Image();
+		charBall.src = 'pictures/charBall.PNG';
+		
+		//charHatBall
+		var charHatBall = new Image();
+		charHatBall.src = 'pictures/charHatBall.PNG';
+		
+		//charGlass
+		var charGlass = new Image();
+		charGlass.src = 'pictures/charGlass.PNG';
+		
+		//charHatGlass
+		var charHatGlass = new Image();
+		charHatGlass.src = 'pictures/charHatGlass.PNG';
+		
+		//charBallGlass
+		var charBallGlass = new Image();
+		charBallGlass.src = 'pictures/charBallGlass.PNG';
+		
+		//charHatGlassBall
+		var charHatGlassBall = new Image();
+		charHatGlassBall.src = 'pictures/charHatGlassBall.PNG';
+		
+		//pikaHat
+		var pikaHat = new Image();
+		pikaHat.src = 'pictures/pikaHat.PNG';
+		
+		//pikaBall
+		var pikaBall = new Image();
+		pikaBall.src = 'pictures/pikaBall.PNG';
+		
+		//pikaHatBall
+		var pikaHatBall = new Image();
+		pikaHatBall.src = 'pictures/pikaHatBall.PNG';
+		
+		//pikaGlass
+		var pikaGlass = new Image();
+		pikaGlass.src = 'pictures/pikaGlass.PNG';
+		
+		//pikaHatGlass
+		var pikaHatGlass = new Image();
+		pikaHatGlass.src = 'pictures/pikaHatGlass.PNG';
+		
+		//pikaBallGlass
+		var pikaBallGlass = new Image();
+		pikaBallGlass.src = 'pictures/pikaBallGlass.PNG';
+		
+		//pikaHatGlassBall
+		var pikaHatGlassBall = new Image();
+		pikaHatGlassBall.src = 'pictures/pikaHatGlassBall.PNG';
+		
+		//different cases for shape
+		var POKE_CIRCLE = "circle";
+		var POKE_PIKACHU = "pikachu";
+		var POKE_CHARMANDER = "charmander";
+		
+		//different cases for background color
+		var backColor = 'black';
+		var BLACK = "black";
+		var RED = "red";
+		var GREEN = "green";
+		var GRADIENT = "gradient";
+		
+		// Set up color variables
+		var gradientColor = "black";
+		var color;
+		
+		//hat checkbox
+		var hatBox = true;
+		var hat = true;
+		
+		//ballCheckbox
+		var ballBox = true;
+		var ball = true;
+		
+		//glassCheckbox
+		var glassBox = true;
+		var glass = true;
+		
+		//background color
+		var backCol;
+		
+		// Holds the mouse position;
+		var mousePos;
+		
+		// Canvas offsets
+		var xOffset = 10;
+		var yOffset = 10;
+		
+		// var for mouse press. Acts like a boolean
+		var mousePressed = false;
+		
+		// Holds images for stamp
+		var stampLoc = 'media/images/charmander.png';
+		
+		
+		
+		// array to hold circle
+		var circleArray = [];
+		var movement;
+		
+		// Arrays to hold mouse x and y position
+		var xArray = [];
+		var yArray = [];
+		
+		// control points array
+		var controlPoint1 = {};
+		var controlPoint2 = {};
+		var controlPoint3 = {};
+		var controlPoint4 = {};
+		var controlPoint5 = {};
+		var controlPoint6 = {};
+		
+		
+		var fireworkVel = 3;
+		
+		var startingPos = 380;
+		
+		//bezier curves
+		var startPoint = {};
+		var endPoint = {};
+		var controlPointOne = {};
+		var controlPointTwo = {};
+		
+		// define particle array
+		var particles = [];
+
+		function init(){
+			// set up canvas stuff
+			canvas = document.querySelector('canvas');
+			ctx = canvas.getContext("2d");
+			
+	
+		
+			
+			// get reference to <audio> element on page
+			audioElement = document.querySelector('audio');
+			
+			// call our helper function and get an analyser node
+			analyserNode = createWebAudioContextWithAnalyserNode(audioElement);
+			
+			// get sound track <select> and Full Screen button working
+			setupUI();
+			
+			// load and play default sound into audio element
+			playStream(audioElement,SOUND_1);
+			
+			// start animation loop
+			update();
+		}
+		
+		
+		function createWebAudioContextWithAnalyserNode(audioElement) {
+			var audioCtx, analyserNode, sourceNode;
+			// create new AudioContext
+			// The || is because WebAudio has not been standardized across browsers yet
+			// http://webaudio.github.io/web-audio-api/#the-audiocontext-interface
+			audioCtx = new (window.AudioContext || window.webkitAudioContext);
+			
+			// create an analyser node
+			analyserNode = audioCtx.createAnalyser();
+			
+			/*
+			We will request NUM_SAMPLES number of samples or "bins" spaced equally 
+			across the sound spectrum.
+			
+			If NUM_SAMPLES (fftSize) is 256, then the first bin is 0 Hz, the second is 172 Hz, 
+			the third is 344Hz. Each bin contains a number between 0-255 representing 
+			the amplitude of that frequency.
+			*/ 
+			
+			// fft stands for Fast Fourier Transform
+			analyserNode.fftSize = NUM_SAMPLES;
+			
+			// this is where we hook up the <audio> element to the analyserNode
+			sourceNode = audioCtx.createMediaElementSource(audioElement); 
+			sourceNode.connect(analyserNode);
+			
+			// here we connect to the destination i.e. speakers
+			analyserNode.connect(audioCtx.destination);
+			return analyserNode;
+		}
+		
+		function setupUI(){
+			document.querySelector("#trackSelect").onchange = function(e){
+				playStream(audioElement,e.target.value);
+			};
+			
+			document.querySelector("#fsButton").onclick = function(){
+				requestFullscreen(canvas);
+			};
+			
+			 // sliders
+			 //changes waveform/frequency
+			 document.querySelector("#slider1").onchange = function(e){
+			 	maxRadius = e.target.value;
+			 };
+			 
+			  document.querySelector("#velocitySlider").onchange = function(e){
+			 	fireworkVel = e.target.value;
+			 };
+			 
+			 //hat on the pokemon
+			 document.getElementById('hatCheckbox').onchange = function(e){
+				console.log("checked=" + e.target.checked);
+				hatBox = e.target.checked;
+				if(hatBox){
+					hat = true;
+				}
+				else{
+					hat = false;
+				}			
+			 };
+			 //ball for the pokemon
+			 document.getElementById('ballCheckbox').onchange = function(e){
+				console.log("checked=" + e.target.checked);
+				ballBox = e.target.checked;
+				if(ballBox){
+					ball = true;
+				}
+				else{
+					ball = false;
+				}			
+			};
+			//sunglasses for pokemon
+			document.getElementById('glassCheckbox').onchange = function(e){
+				console.log("checked=" + e.target.checked);
+				glassBox = e.target.checked;
+				if(glassBox){
+					glass = true;
+				}
+				else{
+					glass = false;
+				}			
+			 };
+			 
+			 //switches between pokemon
+			document.querySelector('#pokemonSelect').onchange = function(e){
+				currentPoke = e.target.value;
+				console.log("currentPokemon=" + currentPoke);
+			};
+			
+			//changes background color
+			document.querySelector('#colorSelect').onchange = function(e){
+				backColor = e.target.value;
+				console.log("backgroundColor=" + backColor);
+			};
+			 
+			 
+			 // Hook up controlPoints
+			 controlPoint1.x = canvas.width/2 - 50;
+			 controlPoint1.y =  canvas.height/2 - 100;
+			 
+			 controlPoint2.x = canvas.width/2 + 50;
+			 controlPoint2.y =  canvas.height/2 - 100;
+			 
+			 controlPoint3.x = canvas.width/2 + 115;
+			 controlPoint3.y = canvas.height/2;
+			 
+			 controlPoint4.x =canvas.width/2 + 50; 
+			 controlPoint4.y = canvas.height/2 + 100; 
+			 
+			 controlPoint5.x = canvas.width/2 - 50;
+			 controlPoint5.y = canvas.height/2 + 100;;
+			 
+			 controlPoint6.x = canvas.width/2 - 115;
+			 controlPoint6.y = canvas.height/2;
+
+			 // Hook mouse event listeners
+			canvas.onmousedown = mouseDown
+			canvas.onmouseup = mouseUp;
+			
+			for(var j = 0; j < 10; j++)
+			{
+				particles.push(new createParticles);
+			}
+			
+			//bezier curve values
+			startPoint.x = 0;
+			startPoint.y = canvas.height/2;
+			endPoint.x = canvas.width;
+			endPoint.y = canvas.height/2;
+			controlPointOne.x = canvas.width/2-50;
+			controlPointOne.y = canvas.height/2;
+			controlPointTwo.x = canvas.width/2+50;
+			controlPointTwo.y = canvas.height/2;
+			
+		}
+		
+		function getMouse(e){
+			var pos = {}
+			pos.x = e.pageX - xOffset;
+			pos.y = e.pageY - yOffset;
+			return pos;
+		}
+		
+		function mouseDown(e){
+			mousePressed = true;
+			mousePos = getMouse(e);
+		}
+		
+		function mouseUp(e){
+			mousePressed = false;
+		}
+		
+		
+		//bezier cubic curve
+		function drawCubicCurve(){
+			ctx.save();
+			switch(backColor){
+				case BLACK:
+					ctx.strokeStyle = backCol;
+					break;
+				case RED:
+					ctx.strokeStyle = backCol;
+					break;
+				case GREEN:
+					ctx.strokeStyle = backCol;
+					break;
+				case GRADIENT:
+					ctx.strokeStyle = "DarkSlateBlue";
+					break;
+			}
+			ctx.lineWidth = "1.3";
+			drawGradient();
+			ctx.beginPath();
+			ctx.moveTo(startPoint.x, startPoint.y);
+			ctx.bezierCurveTo(controlPointOne.x, controlPointOne.y, controlPointTwo.x,controlPointTwo.y, endPoint.x, endPoint.y);
+			ctx.stroke();
+			ctx.restore();
+		}
+		
+		//creates gradient
+		function drawGradient(){
+			var grad = ctx.createLinearGradient(0,0,600,400);
+			grad.addColorStop(0,'red');
+			grad.addColorStop(1/6,'orange');
+			grad.addColorStop(2/6,'yellow');
+			grad.addColorStop(3/6,'green');
+			grad.addColorStop(4/6,'aqua');
+			grad.addColorStop(5/6,'blue');
+			grad.addColorStop(1,'purple');
+			backCol = grad;
+			ctx.fillRect(0,0,0,600);
+		}
+		
+		function manipulatePixels(){
+			// i) Get all of the rgba pixel data of the canvas by grabbing the
+			// ImageDate Object
+			// https://developer.mozilla.org/en-US/docs/Web/API/ImageData
+			var imageData = ctx.getImageData(0,0,canvas.width,canvas.height);
+		
+			//ii) imageData.data is an 8-bit typed array - values range from 0-255
+			// imageData.data contains 4 values per pixel: 4 x canvas.width x
+			// we're looping through this 60 FPS - wow!
+			var data = imageData.data;
+			var length = data.length;
+			var width = imageData.width;
+		
+			
+			//put the modified data back on the canvas
+			ctx.putImageData(imageData,0,0);
+		}
+		
+		function createParticles()
+		{
+			// Set the position of the particles
+			this.y = startingPos;
+			this.x = (Math.random() * 640);
+			
+		}
+		
+		function playStream(audioElement,path){
+			audioElement.src = path;
+			audioElement.play();
+			audioElement.volume = 0.2;
+			document.querySelector('#status').innerHTML = "Now playing: " + path;
+		}
+		
+		function update() { 
+			// this schedules a call to the update() method in 1/60 seconds
+			requestAnimationFrame(update);
+			
+			// create a new array of 8-bit integers (0-255)
+			var frequencyData = new Uint8Array(NUM_SAMPLES/2);
+			
+			// Create a second 8-bit array for waveform
+			var waveFormData = new Uint8Array(NUM_SAMPLES/2);
+			
+
+			// create a new array of 8-bit integers (0-255)
+			var data = new Uint8Array(NUM_SAMPLES/2); 
+			
+			// populate the array with the frequency data
+			// notice these arrays can be passed "by reference" 
+			analyserNode.getByteFrequencyData(data);
+			analyserNode.getByteTimeDomainData(waveFormData); // waveform data
+
+			
+			// DRAW!
+			ctx.clearRect(0,0,800,600);  
+			var circleSpacing = 10;
+			var topSpacing = 50;
+			var circleRad = 10;
+			var imgWidth = 50;
+			var imgHeight = 50;
+			var imgSpacing = 10;
+			
+			switch(backColor){
+				case BLACK:
+					ctx.fillStyle = "black";
+					ctx.fillRect(0,0,800,600);
+					break;
+				case RED:
+					ctx.fillStyle = "red";
+					ctx.fillRect(0,0,800,600);
+					break;
+				case GREEN:
+					ctx.fillStyle = "green";
+					ctx.fillRect(0,0,800,600);
+					break;
+				case GRADIENT:
+					drawGradient();
+					ctx.fillStyle = backCol;
+					ctx.fillRect(0,0,800,600);
+					break;
+			}
+			//changes between frequency and waveform data
+			for(var i=0; i<data.length; i++){
+				if(document.getElementById('frequencyRadio').checked){
+					controlPointOne.y = 500-data[i]*maxRadius;
+					controlPointTwo.y = data[i]*maxRadius;
+					drawCubicCurve();
+				}
+				else if (document.getElementById('waveFormRadio').checked){
+					controlPointOne.y = waveFormData[i]*maxRadius -500;
+					controlPointTwo.y = 1000-waveFormData[i]*maxRadius;
+					drawCubicCurve();
+				}
+			}
+			
+			
+			for(var i=0; i<data.length; i++) 
+				{ 
+			switch(currentPoke){
+				case POKE_CIRCLE: // loop through the data and draw!
+				
+						ctx.fillStyle = 'rgba(0,255,0,0.6)';
+						
+						/* 
+						
+						// the higher the amplitude of the sample (bin) the taller the bar
+						// remember we have to draw our bars left-to-right and top-down
+						ctx.fillRect(i * (barWidth + barSpacing),topSpacing + 256-data[i],barWidth,barHeight); 
+						
+						//draw inverted bars
+						ctx.fillRect(640 - i * (barWidth + barSpacing), topSpacing + 256-data[i] - 20, barWidth,barHeight);
+						
+						*/
+						ctx.beginPath();
+						ctx.arc(i * (circleRad + circleSpacing),topSpacing + 256-data[i],circleRad,0,2*Math.PI);
+						ctx.closePath();
+						ctx.fill();
+						ctx.stroke();
+						
+						ctx.beginPath();
+						ctx.arc(640 - i * (circleRad + circleSpacing),topSpacing + 256-data[i] + 50,circleRad,0,2*Math.PI);
+						ctx.closePath();
+						ctx.fill();
+						ctx.stroke();
+		
+				break;
+				case POKE_PIKACHU:			
+						ctx.fillStyle = 'rgba(0,255,0,0.6)';
+							if(hat == true && ball == false && glass == false){
+							imgHeight = 70;
+							ctx.drawImage(pikaHat,i * (imgWidth + imgSpacing),topSpacing -20 + 256-data[i],imgWidth,imgHeight);
+						}
+						else if(ball == true && hat == false && glass == false){
+							imgHeight = 70;
+							ctx.drawImage(pikaBall,i * (imgWidth + imgSpacing),topSpacing -20 + 256-data[i],imgWidth,imgHeight);
+						}
+						else if(ball && hat && glass == false){
+							imgHeight = 70;
+							ctx.drawImage(pikaHatBall,i * (imgWidth + imgSpacing),topSpacing -20 + 256-data[i],imgWidth,imgHeight);
+						}
+						else if(glass == true && ball == false && hat == false){
+							imgHeight = 70;
+							ctx.drawImage(pikaGlass,i * (imgWidth + imgSpacing),topSpacing -20 + 256-data[i],imgWidth,imgHeight);
+						}
+						else if(glass == true && ball == true && hat == false){
+							imgHeight = 70;
+							ctx.drawImage(pikaBallGlass,i * (imgWidth + imgSpacing),topSpacing -20 + 256-data[i],imgWidth,imgHeight);
+						}
+						else if(glass == true && ball == false && hat == true){
+							imgHeight = 70;
+							ctx.drawImage(pikaHatGlass,i * (imgWidth + imgSpacing),topSpacing -20 + 256-data[i],imgWidth,imgHeight);
+						}
+						else if(glass == true && ball == true && hat == true){
+							imgHeight = 70;
+							ctx.drawImage(pikaHatGlassBall,i * (imgWidth + imgSpacing),topSpacing -20 + 256-data[i],imgWidth,imgHeight);
+						}
+						else{
+							ctx.drawImage(pika,i * (imgWidth + imgSpacing),topSpacing + 256-data[i],imgWidth,imgHeight);
+						}
+						
+						// Draws a pokeball to screen
+						
+						// Change stroke color
+						ctx.strokeStyle = '#FF0000';
+						ctx.save();
+						// Change origin
+						ctx.translate(canvas.width/2 + 375, canvas.height/2 + 200);
+						// Rotate so it's horizontal
+						ctx.rotate(180 * Math.PI/180);
+						// Draw control points to screen
+						// Adjust the control points based on frequency
+						ctx.beginPath();
+						ctx.lineTo(controlPoint3.x + data[i]/2, controlPoint3.y );
+						ctx.lineTo(controlPoint4.x+ data[i]/2 , controlPoint4.y );
+						ctx.lineTo(controlPoint5.x + data[i]/2 , controlPoint5.y);
+						ctx.lineTo(controlPoint6.x+ data[i]/2, controlPoint6.y);
+				
+						ctx.closePath();
+						ctx.restore();
+						ctx.stroke();
+						
+						// Change stroke color
+						ctx.strokeStyle = '#FFFFFF';
+						
+						ctx.save();
+						// Change origin
+						ctx.translate(canvas.width/2 + 375, canvas.height/2 + 200);
+						// Rotate so it's horizontal
+						ctx.rotate(180 * Math.PI/180);
+						
+						// Adjust the control points based on frequency
+						ctx.beginPath();
+						ctx.lineTo(controlPoint1.x + data[i]/2, controlPoint1.y);
+						ctx.lineTo(controlPoint2.x+ data[i]/2 , controlPoint2.y );
+						ctx.lineTo(controlPoint3.x + data[i]/2, controlPoint3.y );
+						ctx.lineTo(controlPoint6.x+ data[i]/2, controlPoint6.y);
+						ctx.closePath();
+						ctx.restore();
+						ctx.stroke();
+						
+						//Gray circles
+						var percent = data[i] / 255;
+						//maxRadius = 200;
+						var circleRadius = percent * maxRadius;
+						ctx.beginPath();
+						ctx.fillStyle = makeColor(183,183,183,.34 - percent/3.0);
+						ctx.arc(canvas.width/2,canvas.height/2, circleRadius, 0,2 * Math.PI, false);
+						ctx.fill();
+						ctx.closePath();
+						
+						//light gray circles, bigger, more transparent
+						ctx.beginPath();
+						ctx.fillStyle = makeColor(229,229,229, .10 - percent/10.0);
+						ctx.arc(canvas.width/2, canvas.height/2,circleRadius * 1.5, 0,2*Math.PI, false);
+						ctx.fill();
+						ctx.closePath();
+						
+						// White circles,smaller
+						ctx.save();
+						ctx.beginPath();
+						ctx.fillStyle = makeColor(255,255,255,.5 - percent/5.0);
+						ctx.arc(canvas.width/2, canvas.height/2,circleRadius * .50,0,2*Math.PI, false);
+						ctx.fill();
+						ctx.closePath();
+						ctx.restore();
+						
+					break;
+					case POKE_CHARMANDER:			
+						ctx.fillStyle = 'rgba(0,255,0,0.6)';
+						if(hat == true && ball == false && glass == false){
+							imgHeight = 70;
+							ctx.drawImage(charHat,i * (imgWidth + imgSpacing),topSpacing -20 + 256-data[i],imgWidth,imgHeight);
+						}
+						else if(ball == true && hat == false && glass == false){
+							imgHeight = 70;
+							ctx.drawImage(charBall,i * (imgWidth + imgSpacing),topSpacing -20 + 256-data[i],imgWidth,imgHeight);
+						}
+						else if(ball && hat && glass == false){
+							imgHeight = 70;
+							ctx.drawImage(charHatBall,i * (imgWidth + imgSpacing),topSpacing -20 + 256-data[i],imgWidth,imgHeight);
+						}
+						else if(glass == true && ball == false && hat == false){
+							imgHeight = 70;
+							ctx.drawImage(charGlass,i * (imgWidth + imgSpacing),topSpacing -20 + 256-data[i],imgWidth,imgHeight);
+						}
+						else if(glass == true && ball == true && hat == false){
+							imgHeight = 70;
+							ctx.drawImage(charBallGlass,i * (imgWidth + imgSpacing),topSpacing -20 + 256-data[i],imgWidth,imgHeight);
+						}
+						else if(glass == true && ball == false && hat == true){
+							imgHeight = 70;
+							ctx.drawImage(charHatGlass,i * (imgWidth + imgSpacing),topSpacing -20 + 256-data[i],imgWidth,imgHeight);
+						}
+						else if(glass == true && ball == true && hat == true){
+							imgHeight = 70;
+							ctx.drawImage(charHatGlassBall,i * (imgWidth + imgSpacing),topSpacing -20 + 256-data[i],imgWidth,imgHeight);
+						}
+						else{
+							ctx.drawImage(charm,i * (imgWidth + imgSpacing),topSpacing + 256-data[i],imgWidth,imgHeight);
+						}
+						
+							// Draws a pokeball to screen
+						
+						// Change stroke color
+						ctx.strokeStyle = '#FF0000';
+						ctx.save();
+						// Change origin
+						ctx.translate(canvas.width/2 + 375, canvas.height/2 + 200);
+						// Rotate so it's horizontal
+						ctx.rotate(180 * Math.PI/180);
+						// Draw control points to screen
+						// Adjust the control points based on frequency
+						ctx.beginPath();
+						ctx.lineTo(controlPoint3.x + data[i]/2, controlPoint3.y );
+						ctx.lineTo(controlPoint4.x+ data[i]/2 , controlPoint4.y );
+						ctx.lineTo(controlPoint5.x + data[i]/2 , controlPoint5.y);
+						ctx.lineTo(controlPoint6.x+ data[i]/2, controlPoint6.y);
+				
+						ctx.closePath();
+						ctx.restore();
+						ctx.stroke();
+						
+						// Change stroke color
+						ctx.strokeStyle = '#FFFFFF';
+						
+						ctx.save();
+						// Change origin
+						ctx.translate(canvas.width/2 + 375, canvas.height/2 + 200);
+						// Rotate so it's horizontal
+						ctx.rotate(180 * Math.PI/180);
+						
+						// Adjust the control points based on frequency
+						ctx.beginPath();
+						ctx.lineTo(controlPoint1.x + data[i]/2, controlPoint1.y);
+						ctx.lineTo(controlPoint2.x+ data[i]/2 , controlPoint2.y );
+						ctx.lineTo(controlPoint3.x + data[i]/2, controlPoint3.y );
+						ctx.lineTo(controlPoint6.x+ data[i]/2, controlPoint6.y);
+						ctx.closePath();
+						ctx.restore();
+						ctx.stroke();
+						
+						//Gray circles
+						var percent = data[i] / 255;
+						//maxRadius = 200;
+						var circleRadius = percent * maxRadius;
+						ctx.beginPath();
+						ctx.fillStyle = makeColor(183,183,183,.34 - percent/3.0);
+						ctx.arc(canvas.width/2,canvas.height/2, circleRadius, 0,2 * Math.PI, false);
+						ctx.fill();
+						ctx.closePath();
+						
+						//light gray circles, bigger, more transparent
+						ctx.beginPath();
+						ctx.fillStyle = makeColor(229,229,229, .10 - percent/10.0);
+						ctx.arc(canvas.width/2, canvas.height/2,circleRadius * 1.5, 0,2*Math.PI, false);
+						ctx.fill();
+						ctx.closePath();
+						
+						// White circles,smaller
+						ctx.save();
+						ctx.beginPath();
+						ctx.fillStyle = makeColor(255,255,255,.5 - percent/5.0);
+						ctx.arc(canvas.width/2, canvas.height/2,circleRadius * .50,0,2*Math.PI, false);
+						ctx.fill();
+						ctx.closePath();
+						ctx.restore();
+						
+					break;
+					}
+				}
+
+			for(var i=0; i<waveFormData.length; i++) {
+		
+			
+			if (mousePressed) {
+					
+					xArray.push(mousePos.x);
+					yArray.push(mousePos.y);
+					
+					mousePressed= false;
+			}	
+				if (typeof yArray[i] != 'undefined') {
+					yArray[i] = yArray[i] - fireworkVel;
+				}
+				
+					console.log(yArray[i]);
+					color = 'rgb(' + Math.floor((Math.random() * 255) + 1) + ',' + Math.floor((Math.random() * 255) + 1) + ',' + Math.floor((Math.random() * 255) + 1) +')';
+					
+					// Loops through the particals length
+					for(var k = 0; k < particles.length; k ++)
+					{
+					
+						// Set up gradient color
+						gradientColor = ctx.createRadialGradient(particles[k].x, particles[k].y,0,particles[k].x,particles[k].y,waveFormData[k]/10);
+						gradientColor.addColorStop(0,"white");
+						gradientColor.addColorStop(0.4,"white");
+						gradientColor.addColorStop(1,color);
+					
+						ctx.beginPath();
+						ctx.arc(particles[k].x,particles[k].y, waveFormData[k]/10, 0, 2* Math.PI, false);
+						// Change the fillstyle and fill in the circle
+						ctx.fillStyle = gradientColor;
+						ctx.fill();
+					
+						// Add velocity to the y val
+						ctx.closePath();
+					
+						particles[k].y -= fireworkVel*.01;
+					
+						// Prevent the particles from going outside the canvas
+						if (particles[k].y <= -30) {
+						particles[k].y = 420; 
+					}
+				}
+				
+					ctx.fillStyle = color;
+					ctx.beginPath();
+					ctx.arc(xArray[i],yArray[i], waveFormData[i]/10, 0, 2* Math.PI, false);
+						
+					ctx.fill();
+					ctx.closePath();
+				
+				// Removes element from the first array. Keeping the array to 14
+				if ((xArray.length >= 15) && (yArray.length >= 15)) {
+					xArray.shift();
+					yArray.shift();
+				}
+			}
+			
+			manipulatePixels();
+			 
+		} 
+		
+		// HELPER
+		function makeColor(red, green, blue, alpha){
+   			var color='rgba('+red+','+green+','+blue+', '+alpha+')';
+   			return color;
+		}
+		
+		 // FULL SCREEN MODE
+		function requestFullscreen(element) {
+			if (element.requestFullscreen) {
+			  element.requestFullscreen();
+			} else if (element.mozRequestFullscreen) {
+			  element.mozRequestFullscreen();
+			} else if (element.mozRequestFullScreen) { // camel-cased 'S' was changed to 's' in spec
+			  element.mozRequestFullScreen();
+			} else if (element.webkitRequestFullscreen) {
+			  element.webkitRequestFullscreen();
+			}
+			// .. and do nothing if the method is not supported
+		};
+		
+		
+		window.addEventListener("load",init);
+	}());
+		
+	</script>
+</head>
+<body>
+	<canvas id="canvas" width="640" height="400"></canvas>
+	<div id="controls">
+		<audio controls loop></audio>
+		<label>Track: 
+			<select id="trackSelect" >
+				<option value="media/Pokemon Theme.m4a">Pokemon Theme</option>
+				<option value="media/Peanuts Theme.mp3">Peanuts Theme</option>
+				<option value="media/The Picard Song.mp3">The Picard Song</option>
+			</select>
+		</label>
+		<label>Pokemon: 
+			<select id="pokemonSelect" >
+				<option value="circle" >circle</option>
+				<option value="pikachu" selected>pikachu</option>
+				<option value="charmander">charmander</option>
+			</select>
+		</label>
+		<label>Background Color: 
+			<select id="colorSelect" >
+				<option value="black" selected>black</option>
+				<option value="red">red</option>
+				<option value="green">green</option>
+				<option value="gradient">gradient</option>
+			</select>
+		</label>
+		<label for="slider1">Radius</label>
+			<input id="slider1" type ="range" min = 3 max= 15 step ="0.1" value ="5"/>
+		<span>
+			<label for="waveFormRadio">Wave Form</label>
+			<input type="radio" name= "form" value= "Wave Form" id="waveFormRadio">
+		</span>
+		<span>
+			<label for="frequencyRadio">Frequency</label>
+			<input type="radio" name = "form" value= "Frequency" checked id="frequencyRadio">
+		</span>
+		<div>
+		<label for="velocitySlider">Velocity - Click Canvas -</label>
+			<input id="velocitySlider" type ="range" min = 1 max= 20 step ="0.02" value ="3"/>
+		</div>
+		<label for="hatCheckbox">Hat</label>
+			<input type="checkbox" checked= true id="hatCheckbox">
+		<span>
+			<label for="ballCheckbox">Ball</label>
+			<input type="checkbox" checked= true id="ballCheckbox">
+		</span>
+		<span>
+			<label for="glassCheckbox">Glasses</label>
+			<input type="checkbox" checked= true id="glassCheckbox">
+		</span>
+		
+		
+		<button id="fsButton">Go Full Screen</button><br>
+		<p id="status">???</p>
+		<span>
+	</div>
+	
+</body>
+</html>
